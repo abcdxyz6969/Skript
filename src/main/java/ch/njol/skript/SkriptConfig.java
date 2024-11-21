@@ -20,7 +20,6 @@ import ch.njol.skript.util.chat.ChatMessages;
 import ch.njol.skript.util.chat.LinkParseMode;
 import ch.njol.skript.variables.Variables;
 import co.aikar.timings.Timings;
-import org.bukkit.Bukkit;
 import org.bukkit.event.EventPriority;
 import org.jetbrains.annotations.Nullable;
 
@@ -373,15 +372,18 @@ public class SkriptConfig {
 					}
 					Config newConfig = new Config(stream, "Skript.jar/config.sk", false, false, ":");
 
-					boolean updated = mainConfig.updateKeys(newConfig);
-//					mainConfig.getMainNode().set(version.key, Skript.getVersion().toString());
+					File backup = FileUtils.backup(configFile);
+					boolean updated = mainConfig.updateNodes(newConfig);
+//					mainConfig.getMainNode().set(version.key, Skript.getVersion().toString()); TODO FOR TESTING!
 					mainConfig.save(configFile);
 					SkriptConfig.mainConfig = mainConfig;
 
 					if (updated) {
-						File backup = FileUtils.backup(configFile);
 						Skript.info("Your configuration has been updated to the latest version. " +
 							"A backup of your old config file has been created as " + backup.getName());
+					} else {
+						Skript.info("Your configuration is outdated, but no changes were performed. " +
+							"A backup of your config file has been created as " + backup.getName());
 					}
 				} catch (IOException ex) {
 					Skript.exception(ex, "Could not update the main config");
