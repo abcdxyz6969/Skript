@@ -20,6 +20,7 @@ import ch.njol.skript.util.chat.ChatMessages;
 import ch.njol.skript.util.chat.LinkParseMode;
 import ch.njol.skript.variables.Variables;
 import co.aikar.timings.Timings;
+import org.bukkit.Bukkit;
 import org.bukkit.event.EventPriority;
 import org.jetbrains.annotations.Nullable;
 
@@ -360,6 +361,11 @@ public class SkriptConfig {
 
 			String configVersion = mainConfig.get(version.key);
 			if (configVersion == null || Skript.getVersion().compareTo(new Version(configVersion)) != 0) {
+				if (!mainConfig.getMainNode().isValid()) {
+					Skript.error("Your config is outdated, but cannot be updated because it contains errors.");
+					return;
+				}
+
 				try (InputStream stream = Skript.getInstance().getResource("config.sk")) {
 					if (stream == null) {
 						Skript.error("Your config is outdated, but Skript couldn't find the newest config in its jar.");
@@ -370,6 +376,7 @@ public class SkriptConfig {
 					boolean updated = mainConfig.updateKeys(newConfig);
 //					mainConfig.getMainNode().set(version.key, Skript.getVersion().toString());
 					mainConfig.save(configFile);
+					SkriptConfig.mainConfig = mainConfig;
 
 					if (updated) {
 						File backup = FileUtils.backup(configFile);

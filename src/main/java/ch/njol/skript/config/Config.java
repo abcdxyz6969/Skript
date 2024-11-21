@@ -2,6 +2,7 @@ package ch.njol.skript.config;
 
 import ch.njol.skript.Skript;
 import ch.njol.skript.config.validate.SectionValidator;
+import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -48,6 +49,11 @@ public class Config implements Comparable<Config> {
 
 	String fileName;
 	@Nullable Path file = null;
+
+	/**
+	 * Whether the config is valid or not.
+	 */
+	private boolean valid = true;
 
 	public Config(InputStream source, String fileName, @Nullable File file,
 				  boolean simple, boolean allowEmptySections, String defaultSeparator) throws IOException {
@@ -151,6 +157,7 @@ public class Config implements Comparable<Config> {
 	/**
 	 * @deprecated This copies all values from the other config and sets them in this config,
 	 * which could be destructive for sensitive data if something goes wrong.
+	 * Also removes user comments.
 	 * Use {@link #updateKeys(Config)} instead.
 	 */
 	@Deprecated(forRemoval = true)
@@ -161,21 +168,13 @@ public class Config implements Comparable<Config> {
 	/**
 	 * @deprecated This copies all values from the other config and sets them in this config,
 	 * which could be destructive for sensitive data if something goes wrong.
+	 * Also removes user comments.
 	 * Use {@link #updateKeys(Config)} instead.
 	 */
 	@Deprecated(forRemoval = true)
 	public boolean setValues(final Config other, final String... excluded) {
 		return getMainNode().setValues(other.getMainNode(), excluded);
 	}
-
-	/*
-	PLAN:
-	1) get nodes that have changed between configs
-	2) get node differences
-	3) add nodes:
-		- if node at index is already occupied, replace it
-		- if node at index is empty, add it
-	 */
 
 	/**
 	 * Updates the keys of this config with the keys of another config.
@@ -189,48 +188,33 @@ public class Config implements Comparable<Config> {
 		Set<Node> newNodes = findNodes(newer.getMainNode());
 		Set<Node> oldNodes = findNodes(getMainNode());
 
-		System.out.println(newNodes);
-		System.out.println(oldNodes);
-
 		newNodes.removeAll(oldNodes);
 		Set<Node> nodesToUpdate = new LinkedHashSet<>(newNodes);
-
-		System.out.println(nodesToUpdate);
 
 		if (nodesToUpdate.isEmpty())
 			return false;
 
 		for (Node node : nodesToUpdate) {
-			int idx = node.getFullIndex();
-			String path = node.getPath();
+			Skript.debug("Updating node %s", node);
 			SectionNode newParent = node.getParent();
-			if (newParent == null)
-				throw new IllegalStateException("newParent is null");
+			Preconditions.checkNotNull(newParent);
 
-			String pathToParent = newParent.getPath();
+			SectionNode parent = getNode(newParent.getPath());
+			Preconditions.checkNotNull(parent);
 
-			System.out.println(idx);
-			System.out.println("path: " + path);
-			System.out.println("pathToParent: " + pathToParent);
-
-			SectionNode parent = getNode(pathToParent);
-			System.out.println("parent: " + parent);
-			if (parent == null)
-				throw new IllegalStateException("parent is null");
-
-			if (idx >= parent.size()) { // add
-				System.out.println("adding due to oversize " + node);
+			int idx = node.getFullIndex();
+			if (idx >= parent.size()) {
+				Skript.debug("Adding node %s to %s (size mismatch)", node, parent);
 				parent.add(node);
 				continue;
 			}
 
-			Node existing = parent.getFull(idx);
-			if (existing != null) { // replace existing
-				System.out.println("replacing " + existing + " with " + node);
-				parent.remove(existing);
+			Node existing = parent.getAt(idx);
+			if (existing != null) { // insert between existing
+				Skript.debug("Adding node %s to %s at index %s", node, parent, idx);
 				parent.add(idx, node);
-			} else { // add
-				System.out.println("adding " + node);
+			} else {
+				Skript.debug("Adding node %s to %s", node, parent);
 				parent.add(node);
 			}
 		}
@@ -238,7 +222,8 @@ public class Config implements Comparable<Config> {
 	}
 
 	/**
-	 * Recursively finds all nodes in a section node.
+	 * Recursively finds <i>all</i> nodes in a section node, including other
+	 * section nodes, entry nodes, and void nodes.
 	 *
 	 * @param node The parent node to search.
 	 * @return A set of the discovered nodes, guaranteed to be in the order of discovery.
@@ -249,9 +234,9 @@ public class Config implements Comparable<Config> {
 
 		for (Iterator<Node> iterator = node.fullIterator(); iterator.hasNext(); ) {
 			Node child = iterator.next();
-			if (child instanceof SectionNode sectionNode) {
+			if (child instanceof SectionNode sectionChild) {
 				nodes.add(child);
-				nodes.addAll(findNodes(sectionNode));
+				nodes.addAll(findNodes(sectionChild));
 			} else if (child instanceof EntryNode || child instanceof VoidNode) {
 				nodes.add(child);
 			}
@@ -259,10 +244,24 @@ public class Config implements Comparable<Config> {
 		return nodes;
 	}
 
+	/**
+	 * Returns the {@link SectionNode} at the given path from the root,
+	 * where the keys are split by dots.
+	 *
+	 * @param path The path to the node.
+	 * @return The {@link SectionNode} at the given path.
+	 */
 	private SectionNode getNode(String path) {
 		return getNode(path.split("\\."));
 	}
 
+	/**
+	 * Returns the {@link SectionNode} at the given path from the root,
+	 * where {@code path} is an array of keys to traverse.
+	 *
+	 * @param path The path to the node.
+	 * @return The {@link SectionNode} at the given path.
+	 */
 	private SectionNode getNode(String... path) {
 		SectionNode node = getMainNode();
 		for (String key : path) {

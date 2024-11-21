@@ -4,6 +4,7 @@ import ch.njol.skript.Skript;
 import ch.njol.skript.SkriptAPIException;
 import ch.njol.skript.config.validate.EntryValidator;
 import ch.njol.skript.config.validate.SectionValidator;
+import ch.njol.skript.lang.Section;
 import ch.njol.skript.log.SkriptLogger;
 import ch.njol.util.NonNullPair;
 import ch.njol.util.coll.CollectionUtils;
@@ -209,8 +210,20 @@ public class SectionNode extends Node implements Iterable<Node> {
 	 * @return True if this section is empty, i.e. it contains only void nodes.
 	 */
 	public boolean isEmpty() {
-		for (final Node node : nodes) {
+		for (Node node : nodes) {
 			if (!node.isVoid())
+				return false;
+		}
+		return true;
+	}
+
+	/**
+	 * @return True if this section and all children are valid, i.e. they contain no invalid nodes.
+	 */
+	public boolean isValid() {
+		for (Node node : nodes) {
+			if ((node instanceof SectionNode sectionNode && !sectionNode.isValid())
+				|| node instanceof InvalidNode)
 				return false;
 		}
 		return true;
@@ -505,7 +518,8 @@ public class SectionNode extends Node implements Iterable<Node> {
 	/**
 	 * @return An iterator over all nodes in this section, including void nodes.
 	 */
-	@NotNull Iterator<Node> fullIterator() {
+	@NotNull
+	Iterator<Node> fullIterator() {
 		return new CheckedIterator<>(nodes.iterator(), Objects::nonNull) {
 			@Override
 			public boolean hasNext() {
