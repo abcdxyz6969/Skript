@@ -139,7 +139,7 @@ public class SectionNode extends Node implements Iterable<Node> {
 	 * @return The node at the specified index. May be null.
 	 * @throws IllegalArgumentException if the index is out of bounds
 	 */
-	public @Nullable Node getFull(int idx) {
+	@Nullable Node getAt(int idx) {
 		Preconditions.checkArgument(idx >= 0 && idx < size(), "idx out of bounds: %s", idx);
 
 		return nodes.get(idx);
@@ -166,44 +166,48 @@ public class SectionNode extends Node implements Iterable<Node> {
 		return entryNode.getValue();
 	}
 
-	public void set(final String key, final String value) {
+	public void set(String key, String value) {
 		final Node n = get(key);
-		if (n instanceof EntryNode) {
-			((EntryNode) n).setValue(value);
+		if (n instanceof EntryNode entryNode) {
+			entryNode.setValue(value);
 		} else {
 			add(new EntryNode(key, value, this));
 		}
 	}
 
-	public void set(final String key, final @Nullable Node node) {
+	public void set(String key, @Nullable Node node) {
 		if (node == null) {
 			remove(key);
 			return;
 		}
-		final Node n = get(key);
+		Node n = get(key);
 		if (n != null) {
 			for (int i = 0; i < nodes.size(); i++) {
-				if (nodes.get(i) == n) {
-					nodes.set(i, node);
-					remove(n);
-					getNodeMap().put(node);
-					node.parent = this;
-					node.config = config;
-					return;
+				if (nodes.get(i) != n) {
+					continue;
 				}
+				nodes.set(i, node);
+				remove(n);
+				getNodeMap().put(node);
+				node.parent = this;
+				node.config = config;
+				return;
 			}
 			assert false;
 		}
 		add(node);
 	}
 
-	void renamed(final Node node, final @Nullable String oldKey) {
+	void renamed(Node node, @Nullable String oldKey) {
 		if (!nodes.contains(node))
 			throw new IllegalArgumentException();
 		getNodeMap().remove(oldKey);
 		getNodeMap().put(node);
 	}
 
+	/**
+	 * @return True if this section is empty, i.e. it contains only void nodes.
+	 */
 	public boolean isEmpty() {
 		for (final Node node : nodes) {
 			if (!node.isVoid())
@@ -333,7 +337,7 @@ public class SectionNode extends Node implements Iterable<Node> {
 	 *
 	 * @param levels Amount of levels to go down, e.g. 0 to only convert direct subnodes of this section or -1 for all subnodes including subnodes of subnodes etc.
 	 */
-	public void convertToEntries(final int levels) {
+	public void convertToEntries(int levels) {
 		convertToEntries(levels, config.separator);
 	}
 
@@ -343,28 +347,28 @@ public class SectionNode extends Node implements Iterable<Node> {
 	 * @param levels    Maximum depth of recursion, <tt>-1</tt> for no limit.
 	 * @param separator Some separator, e.g. ":" or "=".
 	 */
-	public void convertToEntries(final int levels, final String separator) {
+	public void convertToEntries(int levels, String separator) {
 		if (levels < -1)
 			throw new IllegalArgumentException("levels must be >= -1");
 		if (!config.simple)
 			throw new SkriptAPIException("config is not simple: " + config);
 		for (int i = 0; i < nodes.size(); i++) {
-			final Node n = nodes.get(i);
-			if (levels != 0 && n instanceof SectionNode) {
-				((SectionNode) n).convertToEntries(levels == -1 ? -1 : levels - 1, separator);
-			}
+			Node n = nodes.get(i);
+			if (levels != 0 && n instanceof SectionNode sectionNode)
+				sectionNode.convertToEntries(levels == -1 ? -1 : levels - 1, separator);
 			if (!(n instanceof SimpleNode))
 				continue;
-			final String key = n.key;
-			if (key != null)
+			String key = n.key;
+			if (key != null) {
 				nodes.set(i, getEntry(key, n.comment, n.lineNum, separator));
-			else
+			} else {
 				assert false;
+			}
 		}
 	}
 
 	@Override
-	public void save(final PrintWriter w) {
+	public void save(PrintWriter w) {
 		if (parent != null)
 			super.save(w);
 		for (final Node node : nodes)
@@ -377,20 +381,20 @@ public class SectionNode extends Node implements Iterable<Node> {
 		return key + ":";
 	}
 
-	public boolean validate(final SectionValidator validator) {
+	public boolean validate(SectionValidator validator) {
 		return validator.validate(this);
 	}
 
-	HashMap<String, String> toMap(final String prefix, final String separator) {
-		final HashMap<String, String> r = new HashMap<>();
-		for (final Node n : this) {
-			if (n instanceof EntryNode) {
-				r.put(prefix + n.getKey(), ((EntryNode) n).getValue());
+	HashMap<String, String> toMap(String prefix, String separator) {
+		HashMap<String, String> result = new HashMap<>();
+		for (Node node : this) {
+			if (node instanceof EntryNode entryNode) {
+				result.put(prefix + node.getKey(), entryNode.getValue());
 			} else {
-				r.putAll(((SectionNode) n).toMap(prefix + n.getKey() + separator, separator));
+				result.putAll(((SectionNode) node).toMap(prefix + node.getKey() + separator, separator));
 			}
 		}
-		return r;
+		return result;
 	}
 
 	/**
