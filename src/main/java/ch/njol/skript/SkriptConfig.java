@@ -377,7 +377,7 @@ public class SkriptConfig {
 							"A backup of your old config file has been created as " + backup.getName());
 					}
 				} catch (IOException ex) {
-					Skript.exception(ex, "Could not load the main config");
+					Skript.exception(ex, "Could not update the main config");
 					return;
 				}
 			}
