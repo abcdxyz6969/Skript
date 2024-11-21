@@ -299,7 +299,6 @@ public abstract class Node {
 		return output.toString();
 	}
 
-
 	@Nullable
 	public SectionNode getParent() {
 		return parent;
@@ -333,7 +332,7 @@ public abstract class Node {
 	 * @return The index of this node relative to the other children of this node's parent,
 	 * or -1 if this node does not have a parent.
 	 */
-	public int getFullIndex() {
+	int getFullIndex() {
 		if (parent == null)
 			return -1;
 
@@ -397,14 +396,13 @@ public abstract class Node {
 		if (!(object instanceof Node other))
 			return false;
 
-		return Objects.equals(getIndentation(), other.getIndentation()) &&
-			Objects.equals(getKey(), other.getKey()) &&
-			Objects.equals(getComment(), other.getComment());
+		// does not include comment as a different comment is not worth touching the possibly sensitive node
+		return Objects.equals(getPath(), other.getPath());
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(getIndentation(), getKey(), getComment());
+		return Objects.hash(getPath());
 	}
 
 	public boolean debug() {
