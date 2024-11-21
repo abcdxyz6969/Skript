@@ -35,6 +35,7 @@ import ch.njol.skript.log.RetainingLogHandler;
 import ch.njol.skript.log.SkriptLogger;
 import ch.njol.skript.sections.SecLoop;
 import ch.njol.skript.structures.StructOptions.OptionsData;
+import ch.njol.skript.test.runner.TestMode;
 import ch.njol.skript.util.ExceptionUtils;
 import ch.njol.skript.util.SkriptColor;
 import ch.njol.skript.util.Task;
@@ -46,6 +47,7 @@ import ch.njol.util.OpenCloseable;
 import ch.njol.util.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.skriptlang.skript.util.event.EventRegistry;
 import org.skriptlang.skript.lang.script.Script;
@@ -85,7 +87,7 @@ public class ScriptLoader {
 
 	public static final String DISABLED_SCRIPT_PREFIX = "-";
 	public static final int DISABLED_SCRIPT_PREFIX_LENGTH = DISABLED_SCRIPT_PREFIX.length();
-	
+
 	/**
 	 * A class for keeping track of the general content of a script:
 	 * <ul>
@@ -99,12 +101,12 @@ public class ScriptLoader {
 		public ScriptInfo() {
 
 		}
-		
+
 		public ScriptInfo(int numFiles, int numStructures) {
 			files = numFiles;
 			structures = numStructures;
 		}
-		
+
 		/**
 		 * Copy constructor.
 		 * @param other ScriptInfo to copy from
@@ -113,30 +115,30 @@ public class ScriptLoader {
 			files = other.files;
 			structures = other.structures;
 		}
-		
+
 		public void add(ScriptInfo other) {
 			files += other.files;
 			structures += other.structures;
 		}
-		
+
 		public void subtract(ScriptInfo other) {
 			files -= other.files;
 			structures -= other.structures;
 		}
-		
+
 		@Override
 		public String toString() {
 			return "ScriptInfo{files=" + files + ",structures=" + structures + "}";
 		}
 	}
-	
+
 	/**
 	 * @see ParserInstance#get()
 	 */
 	private static ParserInstance getParser() {
 		return ParserInstance.get();
 	}
-	
+
 	/*
 	 * Enabled/disabled script tracking
 	 */
@@ -175,7 +177,7 @@ public class ScriptLoader {
 			return false;
 		}
 	}));
-	
+
 	/**
 	 * Filter for loaded scripts and folders.
 	 */
@@ -235,7 +237,7 @@ public class ScriptLoader {
 		f -> f != null
 			&& (f.isDirectory() && !f.getName().startsWith(".") || !f.isDirectory() && StringUtils.endsWithIgnoreCase(f.getName(), ".sk"))
 			&& f.getName().startsWith(DISABLED_SCRIPT_PREFIX) && !f.isHidden();
-	
+
 	/**
 	 * Reevaluates {@link #disabledScripts}.
 	 * @param path the scripts folder to use for the reevaluation.
@@ -251,8 +253,8 @@ public class ScriptLoader {
 			Skript.exception(e, "An error occurred while trying to update the list of disabled scripts!");
 		}
 	}
-	
-	
+
+
 	/*
 	 * Async loading
 	 */
@@ -285,7 +287,7 @@ public class ScriptLoader {
 	 * This condition might be false during the execution of {@link #setAsyncLoaderSize(int)}.
 	 */
 	private static int asyncLoaderSize;
-	
+
 	/**
 	 * Checks if scripts are loaded in separate thread. If true,
 	 * following behavior should be expected:
@@ -302,7 +304,7 @@ public class ScriptLoader {
 	public static boolean isAsync() {
 		return asyncLoaderSize > 0;
 	}
-	
+
 	/**
 	 * Checks if scripts are loaded in multiple threads instead of one thread.
 	 * If true, {@link #isAsync()} will also be true.
@@ -311,7 +313,7 @@ public class ScriptLoader {
 	public static boolean isParallel() {
 		return asyncLoaderSize > 1;
 	}
-	
+
 	/**
 	 * Sets the amount of async loaders, by updating
 	 * {@link #asyncLoaderSize} and {@link #loaderThreads}.
@@ -331,7 +333,7 @@ public class ScriptLoader {
 				thread.cancelExecution();
 			return;
 		}
-		
+
 		// Remove threads
 		while (loaderThreads.size() > size) {
 			AsyncLoaderThread thread = loaderThreads.remove(loaderThreads.size() - 1);
@@ -341,18 +343,18 @@ public class ScriptLoader {
 		while (loaderThreads.size() < size) {
 			loaderThreads.add(AsyncLoaderThread.create());
 		}
-		
+
 		if (loaderThreads.size() != size)
 			throw new IllegalStateException();
 	}
-	
+
 	/**
 	 * This thread takes and executes tasks from the {@link #loadQueue}.
 	 * Instances of this class must be created with {@link AsyncLoaderThread#create()},
 	 * and created threads will always be part of the {@link #asyncLoaderThreadGroup}.
 	 */
 	private static class AsyncLoaderThread extends Thread {
-		
+
 		/**
 		 * @see AsyncLoaderThread
 		 */
@@ -361,13 +363,13 @@ public class ScriptLoader {
 			thread.start();
 			return thread;
 		}
-		
+
 		private AsyncLoaderThread() {
 			super(asyncLoaderThreadGroup, (Runnable) null);
 		}
-		
+
 		private boolean shouldRun = true;
-		
+
 		@Override
 		public void run() {
 			while (shouldRun) {
@@ -381,7 +383,7 @@ public class ScriptLoader {
 				}
 			}
 		}
-		
+
 		/**
 		 * Tell the loader it should stop taking tasks.
 		 * <br>
@@ -393,9 +395,9 @@ public class ScriptLoader {
 		public void cancelExecution() {
 			shouldRun = false;
 		}
-		
+
 	}
-	
+
 	/**
 	 * Creates a {@link CompletableFuture} using a {@link Supplier} and an {@link OpenCloseable}.
 	 * <br>
@@ -428,7 +430,7 @@ public class ScriptLoader {
 				} finally {
 					openCloseable.close();
 				}
-				
+
 				future.complete(t);
 			} catch (Throwable t) {
 				future.completeExceptionally(t);
@@ -436,7 +438,7 @@ public class ScriptLoader {
 				Skript.exception(t);
 			}
 		};
-		
+
 		if (isAsync() && Bukkit.isPrimaryThread()) {
 			loadQueue.add(task);
 		} else {
@@ -445,8 +447,8 @@ public class ScriptLoader {
 		}
 		return future;
 	}
-	
-	
+
+
 	/*
 	 * Script Loading Methods
 	 */
@@ -476,7 +478,7 @@ public class ScriptLoader {
 			.flatMap(List::stream)
 			.collect(Collectors.toList()), openCloseable);
 	}
-	
+
 	/**
 	 * Loads the specified scripts.
 	 *
@@ -495,7 +497,7 @@ public class ScriptLoader {
 				.forEach(event -> event.onPreInit(configs));
 		//noinspection deprecation - we still need to call it
 		Bukkit.getPluginManager().callEvent(new PreScriptLoadEvent(configs));
-		
+
 		ScriptInfo scriptInfo = new ScriptInfo();
 
 		List<LoadingScriptInfo> scripts = new ArrayList<>();
@@ -504,17 +506,17 @@ public class ScriptLoader {
 		for (Config config : configs) {
 			if (config == null)
 				throw new NullPointerException();
-			
+
 			CompletableFuture<Void> future = makeFuture(() -> {
 				LoadingScriptInfo info = loadScript(config);
 				scripts.add(info);
 				scriptInfo.add(new ScriptInfo(1, info.structures.size()));
 				return null;
 			}, openCloseable);
-			
+
 			scriptInfoFutures.add(future);
 		}
-		
+
 		return CompletableFuture.allOf(scriptInfoFutures.toArray(new CompletableFuture[0]))
 			.thenApply(unused -> {
 				// TODO in the future this won't work when parallel loading is fixed
@@ -672,7 +674,7 @@ public class ScriptLoader {
 		try {
 			if (SkriptConfig.keepConfigsLoaded.value())
 				SkriptConfig.configs.add(config);
-			
+
 			try (CountingLogHandler ignored = new CountingLogHandler(SkriptLogger.SEVERE).start()) {
 				for (Node node : config.getMainNode()) {
 					if (!(node instanceof SimpleNode) && !(node instanceof SectionNode)) {
@@ -700,7 +702,7 @@ public class ScriptLoader {
 					structures.add(structure);
 					nodeMap.put(structure, node);
 				}
-				
+
 				if (Skript.logHigh()) {
 					int count = structures.size();
 					Skript.info("loaded " + count + " structure" + (count == 1 ? "" : "s") + " from '" + config.getFileName() + "'");
@@ -712,7 +714,7 @@ public class ScriptLoader {
 		} finally {
 			parser.setInactive();
 		}
-		
+
 		// In always sync task, enable stuff
 		Callable<Void> callable = () -> {
 			// Remove the script from the disabled scripts list
@@ -726,7 +728,6 @@ public class ScriptLoader {
 
 			ScriptLoader.eventRegistry().events(ScriptInitEvent.class)
 					.forEach(event -> event.onInit(script));
-
 			return null;
 		};
 		if (isAsync()) { // Need to delegate to main thread
@@ -746,7 +747,7 @@ public class ScriptLoader {
 	/*
 	 * Script Structure Loading Methods
 	 */
-	
+
 	/**
 	 * Creates a script structure for every file contained within the provided directory.
 	 * If a directory is not actually provided, the file itself will be used.
@@ -767,11 +768,11 @@ public class ScriptLoader {
 			Skript.exception(e, "An exception occurred while trying to get the canonical file of: " + directory);
 			return new ArrayList<>();
 		}
-		
+
 		File[] files = directory.listFiles(loadedScriptFilter);
 		assert files != null;
 		Arrays.sort(files);
-		
+
 		List<Config> loadedDirectories = new ArrayList<>(files.length);
 		List<Config> loadedFiles = new ArrayList<>(files.length);
 		for (File file : files) {
@@ -787,7 +788,7 @@ public class ScriptLoader {
 		loadedDirectories.addAll(loadedFiles);
 		return loadedDirectories;
 	}
-	
+
 	/**
 	 * Creates a script structure from the provided file.
 	 * This must be done before actually loading a script.
@@ -810,7 +811,7 @@ public class ScriptLoader {
 				unloadScript(script); // ... it might be good idea to unload it now
 			return null;
 		}
-		
+
 		try {
 			String name = Skript.getInstance().getDataFolder().toPath().toAbsolutePath()
 					.resolve(Skript.SCRIPTSFOLDER).relativize(file.toPath().toAbsolutePath()).toString();
@@ -818,10 +819,10 @@ public class ScriptLoader {
 		} catch (IOException e) {
 			Skript.error("Could not load " + file.getName() + ": " + ExceptionUtils.toString(e));
 		}
-		
+
 		return null;
 	}
-	
+
 	/**
 	 * Creates a script structure from the provided source.
 	 * This must be done before actually loading a script.
@@ -843,7 +844,7 @@ public class ScriptLoader {
 		} catch (IOException e) {
 			Skript.error("Could not load " + name + ": " + ExceptionUtils.toString(e));
 		}
-		
+
 		return null;
 	}
 
@@ -898,6 +899,7 @@ public class ScriptLoader {
 			parser.setInactive();
 
 			script.clearData();
+			script.invalidate();
 			loadedScripts.remove(script); // We just unloaded it, so...
 			File scriptFile = script.getConfig().getFile();
 			assert scriptFile != null;
@@ -906,7 +908,7 @@ public class ScriptLoader {
 
 		return info;
 	}
-	
+
 	/**
 	 * Unloads the provided script.
 	 * @param script The script to unload.
@@ -915,7 +917,7 @@ public class ScriptLoader {
 	public static ScriptInfo unloadScript(Script script) {
 		return unloadScripts(Collections.singleton(script));
 	}
-	
+
 	/*
 	 * Script Reloading Methods
 	 */
@@ -950,7 +952,7 @@ public class ScriptLoader {
 
 		return loadScripts(configs, openCloseable);
 	}
-	
+
 	/*
 	 * Code Loading Methods
 	 */
@@ -970,7 +972,7 @@ public class ScriptLoader {
 			return string;
 		return optionsData.replaceOptions(string);
 	}
-	
+
 	/**
 	 * Loads a section by converting it to {@link TriggerItem}s.
 	 */
@@ -1049,6 +1051,20 @@ public class ScriptLoader {
 			parser.setIndentation(parser.getIndentation().substring(0, parser.getIndentation().length() - 4));
 
 		return items;
+	}
+
+	/**
+	 * Creates a Script object for a file (or resource) that may (or may not) exist.
+	 * This is used for providing handles for disabled scripts.
+	 * <br/>
+	 * This does <em>not</em> load (or parse or open or do anything to) the given file.
+	 *
+	 * @return An unlinked, empty script object with an empty backing config
+	 */
+	@ApiStatus.Internal
+	public static Script createDummyScript(String name, @Nullable File file) {
+		Config config = new Config(name, file);
+		return new Script(config, Collections.emptyList());
 	}
 
 	/*
@@ -1432,6 +1448,44 @@ public class ScriptLoader {
 	@Deprecated
 	public static Config loadStructure(Config config) {
 		return config;
+	}
+
+	/**
+	 * Gets a script's file from its name, if one exists.
+	 * @param script The script name/path
+	 * @return The script file, if one is found
+	 */
+	@Nullable
+	public static File getScriptFromName(String script) {
+		if (script.endsWith("/") || script.endsWith("\\")) { // Always allow '/' and '\' regardless of OS
+			script = script.replace('/', File.separatorChar).replace('\\', File.separatorChar);
+		} else if (!StringUtils.endsWithIgnoreCase(script, ".sk")) {
+			int dot = script.lastIndexOf('.');
+			if (dot > 0 && !script.substring(dot + 1).equals(""))
+				return null;
+			script = script + ".sk";
+		}
+
+		if (script.startsWith(ScriptLoader.DISABLED_SCRIPT_PREFIX))
+			script = script.substring(ScriptLoader.DISABLED_SCRIPT_PREFIX_LENGTH);
+
+		File scriptsFolder = Skript.getInstance().getScriptsFolder();
+		File scriptFile = new File(scriptsFolder, script);
+		if (!scriptFile.exists()) {
+			scriptFile = new File(scriptFile.getParentFile(), ScriptLoader.DISABLED_SCRIPT_PREFIX + scriptFile.getName());
+			if (!scriptFile.exists()) {
+				return null;
+			}
+		}
+		try {
+			// Unless it's a test, check if the user is asking for a script in the scripts folder
+			// and not something outside Skript's domain.
+			if (TestMode.ENABLED || scriptFile.getCanonicalPath().startsWith(scriptsFolder.getCanonicalPath() + File.separator))
+				return scriptFile.getCanonicalFile();
+			return null;
+		} catch (IOException e) {
+			throw Skript.exception(e, "An exception occurred while trying to get the script file from the string '" + script + "'");
+		}
 	}
 
 }
