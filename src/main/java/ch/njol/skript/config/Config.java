@@ -50,11 +50,6 @@ public class Config implements Comparable<Config> {
 	String fileName;
 	@Nullable Path file = null;
 
-	/**
-	 * Whether the config is valid or not.
-	 */
-	private boolean valid = true;
-
 	public Config(InputStream source, String fileName, @Nullable File file,
 				  boolean simple, boolean allowEmptySections, String defaultSeparator) throws IOException {
 		try (source) {
@@ -158,7 +153,7 @@ public class Config implements Comparable<Config> {
 	 * @deprecated This copies all values from the other config and sets them in this config,
 	 * which could be destructive for sensitive data if something goes wrong.
 	 * Also removes user comments.
-	 * Use {@link #updateKeys(Config)} instead.
+	 * Use {@link #updateNodes(Config)} instead.
 	 */
 	@Deprecated(forRemoval = true)
 	public boolean setValues(final Config other) {
@@ -169,7 +164,7 @@ public class Config implements Comparable<Config> {
 	 * @deprecated This copies all values from the other config and sets them in this config,
 	 * which could be destructive for sensitive data if something goes wrong.
 	 * Also removes user comments.
-	 * Use {@link #updateKeys(Config)} instead.
+	 * Use {@link #updateNodes(Config)} instead.
 	 */
 	@Deprecated(forRemoval = true)
 	public boolean setValues(final Config other, final String... excluded) {
@@ -177,14 +172,18 @@ public class Config implements Comparable<Config> {
 	}
 
 	/**
-	 * Updates the keys of this config with the keys of another config.
+	 * Updates the nodes of this config with the nodes of another config.
 	 * Used for updating a config file to a newer version.
-	 * This method only sets keys that are missing in this config, thus preserving any existing values.
+	 * <p>
+	 * This method only sets nodes that are missing in this config, thus preserving any existing values.
+	 * The exception to this are the inline comments at entry nodes, since updating this comment
+	 * may not be worth the risk of modifying the entry node.
+	 * </p>
 	 *
 	 * @param newer The newer config to update from.
 	 * @return True if any keys were added to this config, false otherwise.
 	 */
-	public boolean updateKeys(@NotNull Config newer) {
+	public boolean updateNodes(@NotNull Config newer) {
 		Set<Node> newNodes = findNodes(newer.getMainNode());
 		Set<Node> oldNodes = findNodes(getMainNode());
 
@@ -202,7 +201,7 @@ public class Config implements Comparable<Config> {
 			SectionNode parent = getNode(newParent.getPath());
 			Preconditions.checkNotNull(parent);
 
-			int idx = node.getFullIndex();
+			int idx = node.getIndex();
 			if (idx >= parent.size()) {
 				Skript.debug("Adding node %s to %s (size mismatch)", node, parent);
 				parent.add(node);

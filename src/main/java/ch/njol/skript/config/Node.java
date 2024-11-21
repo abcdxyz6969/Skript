@@ -4,6 +4,7 @@ import ch.njol.skript.Skript;
 import ch.njol.skript.log.SkriptLogger;
 import ch.njol.util.NonNullPair;
 import ch.njol.util.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.PrintWriter;
@@ -330,9 +331,9 @@ public abstract class Node {
 
 	/**
 	 * @return The index of this node relative to the other children of this node's parent,
-	 * or -1 if this node does not have a parent.
+	 * or -1 if this node does not have a parent. The index includes counted void nodes.
 	 */
-	int getFullIndex() {
+	int getIndex() {
 		if (parent == null)
 			return -1;
 
@@ -360,7 +361,7 @@ public abstract class Node {
 	 *
 	 * @return The path to this node in the config file, separated by dots.
 	 */
-	public String getPath() {
+	public @NotNull String getPath() {
 		StringBuilder path = new StringBuilder();
 		Node node = this;
 
@@ -396,13 +397,13 @@ public abstract class Node {
 		if (!(object instanceof Node other))
 			return false;
 
-		// does not include comment as a different comment is not worth touching the possibly sensitive node
-		return Objects.equals(getPath(), other.getPath());
+		return Objects.equals(getPath(), other.getPath()) // for entry/section nodes
+			&& Objects.equals(getComment(), other.getComment()); // for void nodes
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(getPath());
+		return Objects.hash(getPath(), getComment());
 	}
 
 	public boolean debug() {
