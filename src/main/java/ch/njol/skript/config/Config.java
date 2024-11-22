@@ -243,17 +243,6 @@ public class Config implements Comparable<Config> {
 
 	/**
 	 * Returns the {@link SectionNode} at the given path from the root,
-	 * where the keys are split by dots.
-	 *
-	 * @param path The path to the node.
-	 * @return The {@link SectionNode} at the given path.
-	 */
-	private SectionNode getNode(String path) {
-		return getNode(path.split("\\."));
-	}
-
-	/**
-	 * Returns the {@link SectionNode} at the given path from the root,
 	 * where {@code path} is an array of keys to traverse.
 	 *
 	 * @param path The path to the node.

@@ -8,8 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.PrintWriter;
-import java.util.Iterator;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class Node {
@@ -343,32 +342,34 @@ public abstract class Node {
 	 * Returns the path to this node in the config file from the root.
 	 *
 	 * <p>
-	 * Getting the path of node {@code z} in the following example would return {@code x.y.z}.
+	 * Getting the path of node {@code z} in the following example would return an array with {@code w.x, y, z}.
 	 * <pre>
-	 *     x:
+	 *     w.x:
 	 *      y:
-	 *       z # this node
+	 *       z: true # this node
 	 * </pre></p>
 	 *
-	 * @return The path to this node in the config file, separated by dots.
+	 * @return The path to this node in the config file.
 	 */
-	public @NotNull String getPath() {
-		StringBuilder path = new StringBuilder();
+	public @NotNull String[] getPath() {
+		List<String> path = new ArrayList<>();
 		Node node = this;
 
 		while (node != null) {
 			if (node.getKey() == null || node.getKey().isEmpty())
 				break;
 
-			path.insert(0, node.getKey() + ".");
+			path.add(0, node.getKey() + ".");
 			node = node.getParent();
 		}
 
 		if (path.isEmpty())
-			return "";
+			return new String[0];
 
-		return path.deleteCharAt(path.length() - 1) // trim trailing dot
-			.toString();
+		int lastIndex = path.size() - 1;
+		String lastValue = path.get(lastIndex);
+		path.set(lastIndex, lastValue.substring(0, lastValue.length() - 1)); // trim trailing dot
+		return path.toArray(new String[0]);
 	}
 
 	/**
@@ -389,13 +390,13 @@ public abstract class Node {
 		if (!(object instanceof Node other))
 			return false;
 
-		return Objects.equals(getPath(), other.getPath()) // for entry/section nodes
+		return Arrays.equals(getPath(), other.getPath()) // for entry/section nodes
 			&& Objects.equals(getComment(), other.getComment()); // for void nodes
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(getPath(), getComment());
+		return Objects.hash(Arrays.hashCode(getPath()), getComment());
 	}
 
 	public boolean debug() {
