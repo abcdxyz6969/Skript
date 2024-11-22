@@ -176,8 +176,6 @@ public class Config implements Comparable<Config> {
 	 * Used for updating a config file to a newer version.
 	 * <p>
 	 * This method only sets nodes that are missing in this config, thus preserving any existing values.
-	 * The exception to this are the inline comments at entry nodes, since updating this comment
-	 * may not be worth the risk of modifying the entry node.
 	 * </p>
 	 *
 	 * @param newer The newer config to update from.
