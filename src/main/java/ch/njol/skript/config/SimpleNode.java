@@ -6,8 +6,8 @@ public class SimpleNode extends Node {
 		super(value, comment, parent, lineNum);
 	}
 
-	public SimpleNode(Config c) {
-		super(c);
+	public SimpleNode(Config config) {
+		super(config);
 	}
 
 	@Override
@@ -15,8 +15,8 @@ public class SimpleNode extends Node {
 		return key;
 	}
 
-	public void set(String s) {
-		key = s;
+	public void set(String string) {
+		key = string;
 	}
 
 }

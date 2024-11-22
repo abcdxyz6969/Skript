@@ -32,9 +32,9 @@ public class EntryNode extends Node implements Entry<String, String> {
 	public String setValue(@Nullable String newValue) {
 		if (newValue == null)
 			return value;
-		String copy = value;
+		String oldValue = value;
 		value = newValue;
-		return copy;
+		return oldValue;
 	}
 
 	@Override

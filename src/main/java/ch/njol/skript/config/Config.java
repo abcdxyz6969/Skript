@@ -321,11 +321,11 @@ public class Config implements Comparable<Config> {
 		return null;
 	}
 
-	public HashMap<String, String> toMap(final String separator) {
+	public HashMap<String, String> toMap(String separator) {
 		return main.toMap("", separator);
 	}
 
-	public boolean validate(final SectionValidator validator) {
+	public boolean validate(SectionValidator validator) {
 		return validator.validate(getMainNode());
 	}
 

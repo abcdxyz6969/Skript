@@ -76,13 +76,13 @@ public class SectionNode extends Node implements Iterable<Node> {
 	/**
 	 * Inserts {@code node} into this section at the specified position.
 	 *
-	 * @param node The node to insert
-	 * @param idx  The index, between 0 and {@link #size()} (inclusive), at which to insert the node
+	 * @param node  The node to insert
+	 * @param index The index, between 0 and {@link #size()} (inclusive), at which to insert the node
 	 */
-	public void add(int idx, @NotNull Node node) {
-		Preconditions.checkArgument(idx >= 0 && idx <= size(), "idx out of bounds: %s", idx);
+	public void add(int index, @NotNull Node node) {
+		Preconditions.checkArgument(index >= 0 && index <= size(), "index out of bounds: %s", index);
 
-		nodes.add(idx, node);
+		nodes.add(index, node);
 		node.parent = this;
 		node.config = config;
 		getNodeMap().put(node);
@@ -142,7 +142,6 @@ public class SectionNode extends Node implements Iterable<Node> {
 	 */
 	@Nullable Node getAt(int idx) {
 		Preconditions.checkArgument(idx >= 0 && idx < size(), "idx out of bounds: %s", idx);
-
 		return nodes.get(idx);
 	}
 
@@ -492,34 +491,14 @@ public class SectionNode extends Node implements Iterable<Node> {
 	 */
 	@Override
 	public @NotNull Iterator<Node> iterator() {
-		return new CheckedIterator<>(nodes.iterator(), n -> n != null && !n.isVoid()) {
-			@Override
-			public boolean hasNext() {
-				boolean hasNext = super.hasNext();
-				if (!hasNext)
-					SkriptLogger.setNode(SectionNode.this);
-				return hasNext;
-			}
-
-			@Override
-			public @Nullable Node next() {
-				Node node = super.next();
-				SkriptLogger.setNode(node);
-				return node;
-			}
-
-			@Override
-			public void remove() {
-				throw new UnsupportedOperationException();
-			}
-		};
+		return new CheckedIterator<>(fullIterator(),
+			n -> Objects.nonNull(n) && !n.isVoid()); // double null check to avoid warning
 	}
 
 	/**
 	 * @return An iterator over all nodes in this section, including void nodes.
 	 */
-	@NotNull
-	Iterator<Node> fullIterator() {
+	@NotNull Iterator<Node> fullIterator() {
 		return new CheckedIterator<>(nodes.iterator(), Objects::nonNull) {
 			@Override
 			public boolean hasNext() {

@@ -14,8 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class Node {
 
-	@Nullable
-	protected String key;
+	protected @Nullable String key;
 
 	protected String comment = "";
 
@@ -23,8 +22,7 @@ public abstract class Node {
 
 	private final boolean debug;
 
-	@Nullable
-	protected SectionNode parent;
+	protected @Nullable SectionNode parent;
 	protected Config config;
 
 	protected Node(Config c) {
@@ -54,11 +52,6 @@ public abstract class Node {
 		SkriptLogger.setNode(this);
 	}
 
-//	protected Node(final String key, final SectionNode parent, final ConfigReader r) {
-//		this(key, parent, r.getLine(), r.getLineNum());
-//	}
-//
-
 	/**
 	 * Key of this node. <tt>null</tt> for empty or invalid nodes, and the config's main node.
 	 */
@@ -71,17 +64,17 @@ public abstract class Node {
 		return config;
 	}
 
-	public void rename(final String newname) {
+	public void rename(String newname) {
 		if (key == null)
 			throw new IllegalStateException("can't rename an anonymous node");
-		final String oldKey = key;
+		String oldKey = key;
 		key = newname;
 		if (parent != null)
 			parent.renamed(this, oldKey);
 	}
 
-	public void move(final SectionNode newParent) {
-		final SectionNode p = parent;
+	public void move(SectionNode newParent) {
+		SectionNode p = parent;
 		if (p == null)
 			throw new IllegalStateException("can't move the main node");
 		p.remove(this);
@@ -239,8 +232,7 @@ public abstract class Node {
 		SkriptLogger.setNode(n); // Revert the node back
 	}
 
-	@Nullable
-	protected String getComment() {
+	protected @Nullable String getComment() {
 		return comment;
 	}
 
@@ -266,8 +258,8 @@ public abstract class Node {
 		return getIndentation() + escapeUnquotedHashtags(save_i()) + comment;
 	}
 
-	public void save(final PrintWriter w) {
-		w.println(save());
+	public void save(PrintWriter writer) {
+		writer.println(save());
 	}
 
 	private static String escapeUnquotedHashtags(String input) {
@@ -300,8 +292,7 @@ public abstract class Node {
 		return output.toString();
 	}
 
-	@Nullable
-	public SectionNode getParent() {
+	public @Nullable SectionNode getParent() {
 		return parent;
 	}
 
@@ -337,13 +328,13 @@ public abstract class Node {
 		if (parent == null)
 			return -1;
 
-		int idx = 0;
+		int index = 0;
 		for (Iterator<Node> iterator = parent.fullIterator(); iterator.hasNext(); ) {
 			Node node = iterator.next();
 			if (node == this)
-				return idx;
+				return index;
 
-			idx++;
+			index++;
 		}
 		return -1;
 	}
@@ -376,7 +367,8 @@ public abstract class Node {
 		if (path.isEmpty())
 			return "";
 
-		return path.deleteCharAt(path.length() - 1).toString();
+		return path.deleteCharAt(path.length() - 1) // trim trailing dot
+			.toString();
 	}
 
 	/**
