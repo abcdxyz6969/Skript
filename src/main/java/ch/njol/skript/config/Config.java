@@ -321,7 +321,7 @@ public class Config implements Comparable<Config> {
 		return null;
 	}
 
-	public HashMap<String, String> toMap(String separator) {
+	public Map<String, String> toMap(String separator) {
 		return main.toMap("", separator);
 	}
 

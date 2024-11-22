@@ -397,8 +397,8 @@ public class SectionNode extends Node implements Iterable<Node> {
 		return validator.validate(this);
 	}
 
-	HashMap<String, String> toMap(String prefix, String separator) {
-		HashMap<String, String> result = new HashMap<>();
+	Map<String, String> toMap(String prefix, String separator) {
+		Map<String, String> result = new HashMap<>();
 		for (Node node : this) {
 			if (node instanceof EntryNode entryNode) {
 				result.put(prefix + node.getKey(), entryNode.getValue());
